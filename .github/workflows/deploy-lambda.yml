@@ -76,7 +76,19 @@ jobs:
         run: |
           LAMBDA_ARN_BASE="arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:${{ env.LAMBDA_FUNCTION_NAME }}"
           STATEMENT_ID="ApiGatewayInvoke"
-          SOURCE_ARN="arn:aws:execute-api:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:${{ env.API_ID }}/*/*/*"
+          RESOURCE_PATH="/"
+          SOURCE_ARN_SPECIFIC="arn:aws:execute-api:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:${{ env.API_ID }}/*/*$RESOURCE_PATH"
+          
+          # 0. ANY Method 생성 (메서드가 없을 때 발생하는 NotFoundException 방지)
+          echo "--- 0. Create ANY Method if not exists on Root / ---"
+          # RESOURCE_ID는 이제 루트 경로의 ID를 사용해야 합니다.
+          aws apigateway put-method \
+          --rest-api-id ${{ env.API_ID }} \
+          --resource-id ${{ env.RESOURCE_ID }} \
+          --http-method ${{ env.HTTP_METHOD }} \
+          --authorization-type NONE \
+          --region ${{ env.AWS_REGION }} 2>/dev/null || true
+          
           
           # 1. 기존 권한 제거 (ResourceConflictException 방지)
           # get-policy가 실패할 경우를 대비해 2>/dev/null 추가 및 region 명시
@@ -94,7 +106,7 @@ jobs:
             --statement-id "$STATEMENT_ID" \
             --action "lambda:InvokeFunction" \
             --principal "apigateway.amazonaws.com" \
-            --source-arn "$SOURCE_ARN" \
+            --source-arn "$SOURCE_ARN_SPECIFIC" \
             --region ${{ env.AWS_REGION }}
           
           # 3. API Gateway 통합 설정 (apigateway:put-integration)
