@@ -16,7 +16,6 @@ jobs:
   build-test-and-deploy:
     name: Build, Test, and Deploy
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
       - name: Checkout Repository
