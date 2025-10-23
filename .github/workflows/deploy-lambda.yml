@@ -80,9 +80,9 @@ jobs:
           STATEMENT_ID="ApiGatewayInvoke"
           SOURCE_ARN="arn:aws:execute-api:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:${{ env.API_ID }}/*/*/*"
 
-          # 1. 기존 권한 제거 (에러 해결)
-          # GetPolicy 명령을 사용해 권한이 있는지 확인하고, 있다면 제거합니다.
-          # 🚨 주의: jq 도구가 설치되어 있어야 합니다 (ubuntu-latest 에는 기본 설치됨).
+        # 1. 기존 권한 제거 (에러 해결)
+        # GetPolicy 명령을 사용해 권한이 있는지 확인하고, 있다면 제거합니다.
+        # 🚨 주의: jq 도구가 설치되어 있어야 합니다 (ubuntu-latest 에는 기본 설치됨).
           if aws lambda get-policy --function-name ${{ env.LAMBDA_FUNCTION_NAME }} | grep -q "$STATEMENT_ID"; then
               echo "Existing permission found. Removing it now."
               aws lambda remove-permission \
@@ -90,8 +90,8 @@ jobs:
                   --statement-id "$STATEMENT_ID"
           fi
 
-          # 2. 새로운 Lambda 호출 권한 부여
-          # 제거 후 다시 추가하여 항상 최신 상태를 유지합니다.
+        # 2. 새로운 Lambda 호출 권한 부여
+        # 제거 후 다시 추가하여 항상 최신 상태를 유지합니다.
           aws lambda add-permission \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --statement-id "$STATEMENT_ID" \
@@ -99,20 +99,20 @@ jobs:
             --principal "apigateway.amazonaws.com" \
             --source-arn "$SOURCE_ARN"     
           
-          # 3. API Gateway 통합 설정 (apigateway:put-integration)
-          # API Gateway의 특정 경로/메서드에 Lambda를 연결합니다.
+        # 3. API Gateway 통합 설정 (apigateway:put-integration)
+        # API Gateway의 특정 경로/메서드에 Lambda를 연결합니다.
           INTEGRATION_URI="arn:aws:apigateway:${{ env.AWS_REGION }}:lambda:path/2015-03-31/functions/arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:${{ env.LAMBDA_FUNCTION_NAME }}/invocations"
-          
-          aws apigateway put-integration \
-            --rest-api-id ${{ env.API_ID }} \
-            --resource-id ${{ env.RESOURCE_ID }} \
-            --http-method ${{ env.HTTP_METHOD }} \
-            --type AWS_PROXY \
-            --integration-http-method POST \
-            --uri "$INTEGRATION_URI"
 
-          # 4. API Gateway 배포 (apigateway:create-deployment)
-          # 변경된 통합 설정을 적용하기 위해 반드시 재배포해야 합니다.
+        # API Gateway에 설정된 Resource ID와 HTTP Method를 사용
+          aws apigateway put-integration \
+          --rest-api-id ${{ env.API_ID }} \
+          --resource-id ${{ env.RESOURCE_ID }} \
+          --http-method ${{ env.HTTP_METHOD }} \
+          --type AWS_PROXY \
+          --integration-http-method POST \
+          --uri "$INTEGRATION_URI"
+        # 4. API Gateway 배포 (apigateway:create-deployment)
+        # 변경된 통합 설정을 적용하기 위해 반드시 재배포해야 합니다.
           aws apigateway create-deployment \
             --rest-api-id ${{ env.API_ID }} \
             --stage-name 'prod' \
