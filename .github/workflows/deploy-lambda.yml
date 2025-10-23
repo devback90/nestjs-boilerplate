@@ -10,7 +10,11 @@ permissions:
 env:
   AWS_REGION: ${{secrets.AWS_REGION }}
   LAMBDA_FUNCTION_NAME: ${{secrets.LAMBDA_FUNCTION_NAME}}
-  LAMBDA_HANDLER: ${{secrets.AWS_REGION }}
+  LAMBDA_HANDLER: ${{secrets.LAMBDA_HANDLER }}
+  API_ID: ${{secrets.API_ID}}
+  RESOURCE_ID: ${{secrets.RESOUCE_ID}}
+  HTTP_METHOD: ${{secrets.HTTP_METHOD}}
+
 
 jobs:
   build-test-and-deploy:
@@ -68,3 +72,38 @@ jobs:
           code-artifacts-dir: dist # Deploy the 'dist' folder
           handler: ${{ env.LAMBDA_HANDLER }}
           runtime: nodejs22.x
+
+      # ------------------------------------------------------------------
+      # --- CD Step 4: Configure API Gateway Integration (NEW) ---
+      # ------------------------------------------------------------------
+      - name: Configure API Gateway Integration
+        run: |
+          # 1. Lambda 호출 권한 부여 (lambda:AddPermission)
+          # API Gateway가 Lambda 함수를 호출할 수 있도록 권한을 추가합니다.
+          # Source ARN에는 API Gateway의 Invoke ARN을 사용합니다.
+          aws lambda add-permission \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --statement-id "ApiGatewayInvoke" \
+            --action "lambda:InvokeFunction" \
+            --principal "apigateway.amazonaws.com" \
+            --source-arn "arn:aws:execute-api:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:${{ env.API_ID }}/*/*/*"
+          
+          # 2. API Gateway 통합 설정 (apigateway:put-integration)
+          # API Gateway의 특정 경로/메서드에 Lambda를 연결합니다.
+          INTEGRATION_URI="arn:aws:apigateway:${{ env.AWS_REGION }}:lambda:path/2015-03-31/functions/arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:${{ env.LAMBDA_FUNCTION_NAME }}/invocations"
+          
+          aws apigateway put-integration \
+            --rest-api-id ${{ env.API_ID }} \
+            --resource-id ${{ env.RESOURCE_ID }} \
+            --http-method ${{ env.HTTP_METHOD }} \
+            --type AWS_PROXY \
+            --integration-http-method POST \
+            --uri "$INTEGRATION_URI"
+
+          # 3. API Gateway 배포 (apigateway:create-deployment)
+          # 변경된 통합 설정을 적용하기 위해 반드시 재배포해야 합니다.
+          aws apigateway create-deployment \
+            --rest-api-id ${{ env.API_ID }} \
+            --stage-name 'prod' \
+            --stage-description 'Deployed by GitHub Actions' \
+            --stage-description 'GitHub Actions Deployment'
