@@ -7,29 +7,65 @@ on:
 permissions:
   id-token: write   # This is required for OIDC authentication
   contents: read    # This is required to checkout the repository
+env:
+  AWS_REGION: ${{secrets.AWS_REGION }}
+  LAMBDA_FUNCTION_NAME: ${{secrets.LAMBDA_FUNCTION_NAME}}
+  LAMBDA_HANDLER: ${{secrets.AWS_REGION }}
 
 jobs:
-  deploy:
-    name: Deploy
+  build-test-and-deploy:
+    name: Build, Test, and Deploy
     runs-on: ubuntu-latest
     environment: production
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v5
+      - name: Checkout Repository
+        uses: actions/checkout@v5
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-        aws-region: ${{ env.AWS_REGION }}
-        # The role-to-assume should be the ARN of the IAM role you created for GitHub Actions OIDC
+      # --- CI Step 1: Setup Node.js Environment ---
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x' # Match your Lambda runtime (nodejs22.x)
+          cache: 'npm' # Cache npm dependencies for faster builds
 
-    - name: Deploy Lambda Function
-      uses: aws-actions/aws-lambda-deploy@v1.1.0
-      with:
-        function-name: my-function-name
-        code-artifacts-dir: my-code-artifacts-dir
-        handler: index.handler
-        runtime: nodejs22.x
-        # Add any additional inputs this action supports
+      # --- CI Step 2: Install Dependencies ---
+      - name: Install Dependencies
+        run: npm ci # Use 'ci' for reproducible builds
+
+      # --- CI Step 3: Build Project ---
+      - name: Build NestJS Project
+        run: npm run build --if-present # Build TypeScript to JavaScript
+
+      # --- CI Step 4: Run Tests (From official CI example) ---
+      # This is the step you asked about.
+      # If tests fail, the workflow will stop here and not deploy.
+      - name: Run Tests
+        run: npm test
+
+      # --- CD Step 1: Prepare Lambda Artifact (Package production code) ---
+      - name: Package Lambda Artifact
+        run: |
+          echo "Copying package.json and package-lock.json to dist..."
+          cp package.json package-lock.json dist/
+          echo "Entering dist directory..."
+          cd dist
+          echo "Installing ONLY production dependencies..."
+          npm ci --production # Install only 'dependencies', not 'devDependencies'
+          echo "Packaging complete."
+
+      # --- CD Step 2: Configure AWS Credentials ---
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} # OIDC Role ARN
+          aws-region: ${{ env.AWS_REGION }}
+
+      # --- CD Step 3: Deploy to AWS Lambda ---
+      - name: Deploy Lambda Function
+        uses: aws-actions/aws-lambda-deploy@v1.1.0 # (Note: This is an older action, consider aws-actions/aws-lambda-deploy-function@v1)
+        with:
+          function-name: ${{ env.LAMBDA_FUNCTION_NAME }}
+          code-artifacts-dir: dist # Deploy the 'dist' folder
+          handler: ${{ env.LAMBDA_HANDLER }}
+          runtime: nodejs22.x
