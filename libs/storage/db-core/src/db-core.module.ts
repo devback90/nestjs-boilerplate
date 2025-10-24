@@ -1,9 +1,15 @@
-import { Module } from '@nestjs/common';
-import { DbCoreService } from './db-core.service';
+import {Module} from '@nestjs/common';
+import {DbCoreService} from './db-core.service';
+import {MikroOrmModule} from "@mikro-orm/nestjs";
 
 @Module({
-  providers: [DbCoreService],
-  exports: [DbCoreService],
+    imports: [MikroOrmModule.forRoot(),
+        MikroOrmModule.forFeature({
+            entities: [],
+        }),],
+    providers: [DbCoreService],
+    exports: [DbCoreService, MikroOrmModule],
 })
 
-export class DbCoreModule {}
+export class DbCoreModule {
+}
