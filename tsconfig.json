@@ -10,7 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "incremental":false,
+    "incremental": false,
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
@@ -18,6 +18,26 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "allowJs": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "paths": {
+      "@app/storage/db-core": [
+        "libs/storage/db-core/src"
+      ],
+      "@app/storage/db-core/*": [
+        "libs/storage/src/db-core/*"
+      ],
+      "@app/support/logging": [
+        "libs/support/logging/src"
+      ],
+      "@app/support/logging/*": [
+        "libs/support/logging/src/*"
+      ],
+      "@app/support/monitoring": [
+        "libs/support/monitoring/src"
+      ],
+      "@app/support/monitoring/*": [
+        "libs/support/monitoring/src/*"
+      ]
+    }
   }
 }
