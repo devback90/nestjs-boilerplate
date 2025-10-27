@@ -20,12 +20,18 @@
     "test:e2e": "jest --config apps/core-api/test/jest-e2e.json"
   },
   "dependencies": {
+    "@mikro-orm/core": "^6.5.9",
+    "@mikro-orm/mysql": "^6.5.9",
+    "@mikro-orm/nestjs": "^6.1.1",
+    "@mikro-orm/reflection": "^6.5.9",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@vendia/serverless-express": "^4.12.6",
     "aws-lambda": "^1.0.7",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

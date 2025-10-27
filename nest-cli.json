@@ -3,8 +3,6 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "apps/core-api/src",
   "compilerOptions": {
-    "webpack": true,
-    "tsConfigPath": "apps/core-api/tsconfig.app.json",
     "deleteOutDir": true
   },
   "monorepo": true,
@@ -16,6 +14,7 @@
       "entryFile": "main",
       "sourceRoot": "apps/core-api/src",
       "compilerOptions": {
+        "webpack": true,
         "tsConfigPath": "apps/core-api/tsconfig.app.json"
       }
     },
