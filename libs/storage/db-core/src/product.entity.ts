@@ -1,15 +1,14 @@
-import {BaseEntity, Entity, Property} from "@mikro-orm/core";
+import {  Entity, Property } from '@mikro-orm/core';
+import { ProductRepository } from './product.repository';
+import { BaseEntity } from './base.entity';
 
-
-@Entity()
+@Entity({tableName:'product', repository: () => ProductRepository })
 export class ProductEntity extends BaseEntity {
-    @Property()
-    name: string;
+  @Property()
+  name: string;
 
-    constructor(name: string) {
-        super();
-        this.name = name;
-
-    }
-
+  constructor(name: string) {
+    super();
+    this.name = name;
+  }
 }
