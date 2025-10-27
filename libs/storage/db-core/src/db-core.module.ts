@@ -1,16 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DbCoreService } from './db-core.service';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { SkuEntity } from './sku.entity';
-import { ProductEntity } from './product.entity';
-import { InventoryStockEntity } from './inventory-stock.entity';
-import { FulfillmentCenterEntity } from './fulfillment-center.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import { MySqlDriver } from '@mikro-orm/mysql';
-import { InventoryStockRepository } from './inventory-stock.repository';
-import { SkuRepository } from './sku.repository';
-import { ProductRepository } from './product.repository';
+
 
 @Module({
   imports: [
@@ -27,10 +21,7 @@ import { ProductRepository } from './product.repository';
         password: configService.get<string>('DB_PASSWORD'),
         dbName: configService.get<string>('DB_NAME'),
         entities: [
-          SkuEntity,
-          ProductEntity,
-          InventoryStockEntity,
-          FulfillmentCenterEntity,
+
         ],
 
         entitiesTs: ['libs/storage/db-core/src/*.entity.ts'],
@@ -44,10 +35,7 @@ import { ProductRepository } from './product.repository';
     }),
     MikroOrmModule.forFeature({
       entities: [
-        SkuEntity,
-        ProductEntity,
-        InventoryStockEntity,
-        FulfillmentCenterEntity,
+
       ],
     }),
   ],
